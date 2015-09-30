@@ -37,7 +37,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
      }
 
 
-     var PENDING = 0, EVAPORATING = 2, COMPLETE = 3, PAUSED = 4, CANCELED = 5, ERROR = 10, ABORTED = 20, AWS_URL = config.aws_url || 'https://s3.amazonaws.com', ETAG_OF_0_LENGTH_BLOB = '"d41d8cd98f00b204e9800998ecf8427e"';
+     var PENDING = 0, EVAPORATING = 2, COMPLETE = 3, PAUSED = 4, CANCELED = 5, ERROR = 10, ABORTED = 20, AWS_URL = config.aws_url || 'https://' + config.bucket + '.s3.amazonaws.com', ETAG_OF_0_LENGTH_BLOB = '"d41d8cd98f00b204e9800998ecf8427e"';
 
      var _ = this;
      var files = [];
@@ -68,9 +68,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
            err = 'Missing attribute: name  ';
         }
         else if(con.encodeFilename) {
-           file.name = encodeURIComponent(file.name); // prevent signature fail in case file name has spaces 
-        }       
-        
+           file.name = file.name; // prevent signature fail in case file name has spaces
+        }
+
         /*if (!(file.file instanceof File)){
            err += '.file attribute must be instanceof File';
         }*/
@@ -325,7 +325,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
               var eTag = xhr.getResponseHeader('ETag'), msg;
               l.d('uploadPart 200 response for part #' + partNumber + '     ETag: ' + eTag);
               if(part.isEmpty || (eTag != ETAG_OF_0_LENGTH_BLOB)) // issue #58
-              { 
+              {
                  part.eTag = eTag;
                  part.status = COMPLETE;
               }
@@ -583,13 +583,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
            }
            else
            {
-               var xmlHttpRequest = new XMLHttpRequest(); 
+               var xmlHttpRequest = new XMLHttpRequest();
 
                xmlHttpRequest.open("GET", con.timeUrl + '?requestTime=' + new Date().getTime(), false);
                xmlHttpRequest.send();
-               requester.dateString = xmlHttpRequest.responseText;               
+               requester.dateString = xmlHttpRequest.responseText;
            }
-           
+
            requester.x_amz_headers = extend(requester.x_amz_headers,{
               'x-amz-date': requester.dateString
            });
@@ -653,8 +653,31 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         }
 
 
+        function authorizedSend(authRequester) {
+          if(con.signerUrl) {
+            authorizedSendWithUrl(authRequester)
+          } else if(con.signerFunction) {
+            authorizedSendWithFunction(authRequester)
+          } else {
+            warnMsg = 'No signer found. Use signerUrl or signerFunction in config';
+            l.w(warnMsg);
+            me.warn(warnMsg);
+          }
+        }
+
+        function authorizedSendWithFunction(authRequester) {
+          con.signerFunction(makeStringToSign(authRequester), function(signature) {
+            authRequester.auth = signature;
+            authRequester.onGotAuth();
+          }, function(errorMessage) {
+            warnMsg = 'failed authorizedSendWithFunction: ' + errorMessage;
+            l.w(warnMsg);
+            me.warn(warnMsg);
+          })
+        }
+
         //see: http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html#ConstructingTheAuthenticationHeader
-        function authorizedSend(authRequester){
+        function authorizedSendWithUrl(authRequester){
 
            l.d('authorizedSend() ' + authRequester.step);
            var xhr = new XMLHttpRequest();
@@ -707,7 +730,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
                xhr.setRequestHeader(header, me.signHeaders[header])
              }
            }
-          
+
            if( me.beforeSigner instanceof Function ) {
              me.beforeSigner(xhr);
            }
@@ -736,15 +759,14 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
               '\n'+
               x_amz_headers +
               (con.cloudfront ? '/' + con.bucket : '')+
+              '/' + con.bucket +
               request.path;
-           return encodeURIComponent(to_sign);
+           return to_sign;
         }
 
        function getPath() {
-         var path = '/' + con.bucket + '/' + me.name;
-         if (con.cloudfront || AWS_URL.indexOf('cloudfront') > -1) {
-           path = '/' + me.name;
-         }
+         var path = '/' + me.name;
+
          return path;
        }
 
