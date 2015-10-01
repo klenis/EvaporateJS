@@ -666,7 +666,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         }
 
         function authorizedSendWithFunction(authRequester) {
-          con.signerFunction(makeStringToSign(authRequester), function(signature) {
+          con.signerFunction(authRequester, function(signature) {
             authRequester.auth = signature;
             authRequester.onGotAuth();
           }, function(errorMessage) {
