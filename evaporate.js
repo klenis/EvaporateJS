@@ -83,9 +83,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
      _.cancel = function(id){
 
+       file = files.filter(function(item) { return item.id === id })[0]
+
         l.d('cancel ', id);
-        if (files[id]){
-           files[id].stop();
+        if (file){
+           file.stop();
            return true;
         } else {
            return false;
@@ -129,14 +131,15 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
      function addFile(file){
 
-        var id = files.length;
+        var id = Math.random().toString(36).slice(2);
         files.push(new FileUpload(extend({
            progress: function(){},
            complete: function(){},
            cancelled: function(){},
            info: function(){},
            warn: function(){},
-           error: function(){}
+           error: function(){},
+           create: function(){}
         },file,{
            id: id,
            status: PENDING,
@@ -252,6 +255,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
               var match = xhr.response.match(/<UploadId\>(.+)<\/UploadId\>/);
               if (match && match[1]){
                  me.uploadId = match[1];
+                 me.create(match[1])
                  l.d('requester success. got uploadId ' + me.uploadId);
                  makeParts();
                  processPartsList();
