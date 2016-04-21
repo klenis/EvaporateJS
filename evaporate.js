@@ -28,8 +28,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
   var Evaporate = function(config){
 
      this.supported = !((typeof(File)=='undefined') ||
-        (typeof(Blob)=='undefined') ||
-        !(!!Blob.prototype.webkitSlice || !!Blob.prototype.mozSlice || Blob.prototype.slice) ||
+        (typeof(window.Blob)=='undefined') ||
+        !(!!window.Blob.prototype.webkitSlice || !!window.Blob.prototype.mozSlice || window.Blob.prototype.slice) ||
         config.testUnsupported);
 
      if(!this.supported){
